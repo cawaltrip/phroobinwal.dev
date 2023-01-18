@@ -17,13 +17,14 @@
     ]
   },
   "context": {
+    "appName": "PhroobinwalDev",
     "domainName": "phroobinwal.dev",
-    "appName": "phroobinwal.dev",
     "githubOwner": "cawaltrip",
     "githubRepo": "phroobinwal.dev",
     "githubBranch": "main",
     "//publicWebsitePath": "Relative to this file.",
     "publicWebsitePath": "../website/dist",
+    "hasPrivateData": false,
     "generateWildcardCertificate": true,
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

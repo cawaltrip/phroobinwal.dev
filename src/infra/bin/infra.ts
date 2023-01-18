@@ -17,12 +17,12 @@ const github: GithubProps = {
   githubRepo: app.node.tryGetContext("githubRepo"),
   githubBranch: app.node.tryGetContext("githubBranch")
 }
-const publicBucketName = app.node.tryGetContext("publicBucketName") || appName;
-const privateBucketName = app.node.tryGetContext("privateBucketName");
-const loggingBucketName = app.node.tryGetContext("loggingBucketName") || `${publicBucketName}-logging`;
-const hasPrivateData: boolean = app.node.tryGetContext("hasPrivateData") || !!privateBucketName
+const publicBucketName = app.node.tryGetContext("publicBucketName") || `${appName}-public`;
+const privateBucketName = app.node.tryGetContext("privateBucketName") || `${appName}-private`;
+const loggingBucketName = app.node.tryGetContext("loggingBucketName") || `${appName}-logging`;
 const publicWebsitePath = app.node.tryGetContext("publicWebsitePath");
 const privateWebsitePath = app.node.tryGetContext("privateWebsitePath");
+const hasPrivateData: boolean = app.node.tryGetContext("hasPrivateData") || !!privateWebsitePath
 const generateWildcardCertificate: boolean = app.node.tryGetContext("generateWildcardCertificate") || false;
 
 const globalEnv = {
@@ -70,7 +70,7 @@ for (const pathCheck of pathsToCheck) {
 }
 
 // Create the stack
-new InfraStack(app, 'InfraStack', {
+new InfraStack(app, appName, {
   github, ...globalEnv, env: envUS
 });
 
