@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
 import {
-  aws_s3_deployment as s3_deployment,
+  aws_s3_deployment as s3deploy,
 } from "aws-cdk-lib";
 import {
   CloudFrontDistributionStack,
@@ -12,15 +12,15 @@ export interface SiteDeploymentStackProps extends CloudFrontDistributionStackPro
 }
 
 export class SiteDeploymentStack extends CloudFrontDistributionStack {
-  public readonly deployment: s3_deployment.BucketDeployment;
+  public readonly deployment: s3deploy.BucketDeployment;
 
   constructor(scope: Construct, id: string, props: SiteDeploymentStackProps) {
     super(scope, id, props);
 
     // Deploy our site to S3
-    this.deployment = new s3_deployment.BucketDeployment(this, "DeployWithInvalidation", {
-      sources: [s3_deployment.Source.asset(this.storage.publicBucketDataPath)],
-      destinationBucket: this.storage.publicBucket,
+    this.deployment = new s3deploy.BucketDeployment(this, "DeployWithInvalidation", {
+      sources: [s3deploy.Source.asset(this.publicBucketDataPath)],
+      destinationBucket: this.publicBucket,
       distribution: this.distribution,
       distributionPaths: ['/*'],
     })

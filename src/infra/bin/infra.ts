@@ -38,8 +38,8 @@ const globalEnv = {
   privateBucketName: privateBucketName,
   loggingBucketName: loggingBucketName,
   deploymentType: deploymentType,
-  publicWebsitePath: publicWebsitePath,
-  privateWebsitePath: privateWebsitePath,
+  publicBucketDataPath: publicWebsitePath,
+  privateBucketDataPath: privateWebsitePath,
   generateWildcardCertificate: generateWildcardCertificate
 }
 const envUS = {

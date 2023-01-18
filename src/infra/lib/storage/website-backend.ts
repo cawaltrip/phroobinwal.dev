@@ -1,8 +1,10 @@
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib"
 import {
+  aws_certificatemanager as acm,
   aws_cloudfront as cf,
   aws_iam as iam,
+  aws_route53 as route53,
 } from "aws-cdk-lib";
 import {
   SecureBucket,
@@ -18,8 +20,18 @@ export interface WebsiteBackendStackProps extends cdk.StackProps {
   deploymentType: DeploymentType;
   publicBucketDataPath: string;
   privateBucketDataPath?: string;
+  domainName: string;
+  generateWildcardCertificate?: boolean;
 }
 export class WebsiteBackendStack extends cdk.Stack {
+  // Domain variables
+  public readonly domainName: string;
+  public readonly certificate: acm.Certificate;
+  public readonly wildcardCertificate?: acm.Certificate;
+  public readonly hostedZone: route53.IHostedZone;
+  public readonly aRecords: route53.ARecord[];
+
+  // Storage variables
   public readonly publicBucket: SecureBucket;
   public readonly publicBucketDataPath: string;
   public readonly privateBucket?: SecureBucket;
@@ -29,8 +41,46 @@ export class WebsiteBackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: WebsiteBackendStackProps) {
     super(scope, id, props);
 
-    this.publicBucketDataPath = props.publicBucketDataPath;
+    // Create the domain
+    this.domainName = props.domainName;
 
+    // Go through and do error checking before going further.
+    this.hostedZone = route53.HostedZone.fromLookup(this, "Zone", {
+      domainName: this.domainName,
+    });
+    if (!this.hostedZone) {
+      throw new Error("Hosted Zone could not be found.");
+    }
+
+    // Base certificate
+    this.certificate = new acm.DnsValidatedCertificate(this, "WebsiteCertificate", {
+      domainName: this.domainName,
+      hostedZone: this.hostedZone,
+      region: "us-east-1", // Must be in us-east-1 for certs.
+    });
+    new cdk.CfnOutput(this, "CertificateArn", {
+      value: `${this.certificate.certificateArn}`,
+      description: "ARN for the top-level certificate",
+      exportName: "CertificateArn"
+    });
+
+    // Wildcard certificate if desired
+    if (props.generateWildcardCertificate) {
+      this.wildcardCertificate = new acm.DnsValidatedCertificate(this, "WildcardWebsiteCertificate", {
+        domainName: `*.${this.domainName}`,
+        hostedZone: this.hostedZone,
+        region: "us-east-1",
+      });
+
+      new cdk.CfnOutput(this, "WildcardCertificateArn", {
+        value: `${this.wildcardCertificate.certificateArn}`,
+        description: "ARN for the wildcard certificate",
+        exportName: "WildcardCertificateArn"
+      });
+    }
+
+    // Set up the website storage.
+    this.publicBucketDataPath = props.publicBucketDataPath;
     if (props.hasPrivateData && props.privateBucketDataPath) {
       this.privateBucketDataPath = props.privateBucketDataPath;
     }
@@ -62,6 +112,14 @@ export class WebsiteBackendStack extends cdk.Stack {
         ...this.arnForObjects("*"),
       ]
     });
+  }
+
+  addARecord(id: string, props: route53.ARecordProps) {
+    const aRecord = new route53.ARecord(this, id, props)
+    if (aRecord) {
+      this.aRecords.push(aRecord);
+    }
+    return aRecord;
   }
 
   addToResourcePolicy(policyStatement: iam.PolicyStatement) {

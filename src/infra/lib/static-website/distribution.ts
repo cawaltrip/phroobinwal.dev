@@ -6,40 +6,37 @@ import {
   aws_cloudfront as cf,
   aws_cloudfront_origins as cf_origins,
 } from "aws-cdk-lib";
-import { WebsiteBackendStack, WebsiteBackendStackProps } from "../storage/website-backend";
-import { DomainStack } from "../domain/domain";
+import {
+  WebsiteBackendStack,
+  WebsiteBackendStackProps
+} from "../storage/website-backend";
 
 export interface CloudFrontDistributionStackProps extends WebsiteBackendStackProps {
-  domain: DomainStack;
   appName: string;
 }
 
-export class CloudFrontDistributionStack extends cdk.Stack {
+export class CloudFrontDistributionStack extends WebsiteBackendStack {
   public readonly distribution: cf.Distribution;
-  public readonly storage: WebsiteBackendStack;
 
   constructor(scope: Construct, id: string, props: CloudFrontDistributionStackProps) {
     super(scope, id, props);
 
-    // Create the backend
-    this.storage = new WebsiteBackendStack(this, "CloudFrontDataStore", props);
-
     // Create the CloudFront distribution.
     const rootObject = "index.html";
     this.distribution = new cf.Distribution(this, "WebsiteCDN", {
-      comment: `CDK CloudFront S3 Dist for ${props.appName} (${props.domain.domainName})`,
+      comment: `CDK CloudFront S3 Dist for ${props.appName} (${this.domainName})`,
       defaultRootObject: rootObject,
-      certificate: props.domain.certificate,
-      domainNames: [props.domain.domainName],
+      certificate: this.certificate,
+      domainNames: [this.domainName],
       enableLogging: true,
-      logBucket: this.storage.loggingBucket,
+      logBucket: this.loggingBucket,
       logFilePrefix: "cf-access-logs/",
       logIncludesCookies: false,
       httpVersion: cf.HttpVersion.HTTP2_AND_3,
       minimumProtocolVersion: cf.SecurityPolicyProtocol.TLS_V1_2_2021,
       priceClass: cf.PriceClass.PRICE_CLASS_100,
       defaultBehavior: {
-        origin: new cf_origins.S3Origin(this.storage.publicBucket),
+        origin: new cf_origins.S3Origin(this.publicBucket),
         compress: true,
         viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD_OPTIONS
@@ -64,15 +61,10 @@ export class CloudFrontDistributionStack extends cdk.Stack {
 
     // Add the A Record for this distribution to Route53
     const aRecord = new route53.ARecord(this, "CloudFrontDistributionARecord", {
-      recordName: props.domain.domainName,
+      recordName: this.domainName,
       target: route53.RecordTarget.fromAlias(new route53_targets.CloudFrontTarget(this.distribution)),
-      zone: props.domain.hostedZone
+      zone: this.hostedZone
     });
-    // const result = props.domain.addARecord("CloudFrontDistribution", {
-    //   recordName: props.domain.domainName,
-    //   target: route53.RecordTarget.fromAlias(new route53_targets.CloudFrontTarget(this.distribution)),
-    //   zone: props.domain.hostedZone,
-    // });
 
     new cdk.CfnOutput(this, "CloudFrontARecord", {
       value: aRecord.toString(),
