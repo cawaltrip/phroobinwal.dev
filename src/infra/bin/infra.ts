@@ -6,6 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import { InfraStack } from '../lib/infra-stack';
 import { DeploymentType } from "../lib/utils/deployment-type";
 import { GithubProps } from "../lib/utils/github-props";
+import { canonicalizeS3BucketName } from "../lib/utils/canonicalize-s3-bucket-name";
 
 const app = new cdk.App();
 
@@ -17,13 +18,17 @@ const github: GithubProps = {
   githubRepo: app.node.tryGetContext("githubRepo"),
   githubBranch: app.node.tryGetContext("githubBranch")
 }
-const publicBucketName = app.node.tryGetContext("publicBucketName") || `${appName}-public`;
-const privateBucketName = app.node.tryGetContext("privateBucketName") || `${appName}-private`;
-const loggingBucketName = app.node.tryGetContext("loggingBucketName") || `${appName}-logging`;
+let publicBucketName = app.node.tryGetContext("publicBucketName") || `${appName}-public`;
+let privateBucketName = app.node.tryGetContext("privateBucketName") || `${appName}-private`;
+let loggingBucketName = app.node.tryGetContext("loggingBucketName") || `${appName}-logging`;
 const publicWebsitePath = app.node.tryGetContext("publicWebsitePath");
 const privateWebsitePath = app.node.tryGetContext("privateWebsitePath");
 const hasPrivateData: boolean = app.node.tryGetContext("hasPrivateData") || !!privateWebsitePath
 const generateWildcardCertificate: boolean = app.node.tryGetContext("generateWildcardCertificate") || false;
+
+publicBucketName = canonicalizeS3BucketName(publicBucketName);
+privateBucketName = canonicalizeS3BucketName(privateBucketName);
+loggingBucketName = canonicalizeS3BucketName(loggingBucketName);
 
 const globalEnv = {
   appName: appName,
