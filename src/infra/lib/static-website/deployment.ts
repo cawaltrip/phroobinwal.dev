@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {
   aws_s3_deployment as s3_deployment,
@@ -10,7 +8,7 @@ import {
 } from "./distribution";
 
 export interface SiteDeploymentStackProps extends CloudFrontDistributionStackProps {
-  
+
 }
 
 export class SiteDeploymentStack extends CloudFrontDistributionStack {

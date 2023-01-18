@@ -5,7 +5,6 @@ import {
   aws_route53_targets as route53_targets,
   aws_cloudfront as cf,
   aws_cloudfront_origins as cf_origins,
-  aws_iam as iam,
 } from "aws-cdk-lib";
 import { WebsiteBackendStack, WebsiteBackendStackProps } from "../storage/website-backend";
 import { DomainStack } from "../domain/domain";

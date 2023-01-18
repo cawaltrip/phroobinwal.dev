@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib"
 import {

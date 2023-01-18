@@ -1,9 +1,9 @@
+import { Construct } from "constructs";
 import {
   aws_s3 as s3,
   aws_kms as kms,
   aws_iam as iam,
 } from "aws-cdk-lib";
-import {Construct} from "constructs";
 
 export class SecureBucketProps implements s3.BucketProps {
   /**

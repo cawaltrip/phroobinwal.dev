@@ -5,7 +5,6 @@ import { SiteDeploymentStack } from "./static-website/deployment";
 import { DeploymentType } from "./utils/deployment-type";
 import { WebsiteBackendStack } from "./storage/website-backend";
 import { DomainStack } from "./domain/domain";
-import {CloudFrontDistributionStack} from "./static-website/distribution";
 
 export interface InfraStackProps extends cdk.StackProps {
   github: GithubProps;
