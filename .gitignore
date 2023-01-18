@@ -1,8 +1,8 @@
+# Don't ignore the website output directory
+!src/website/dist/
+
 # CDK Stuff
 cdk.out
-
-# Don't include the logo for now
-/src/assets/shared/logo.svg
 
 # Don't include the bootstrap directory
 /bootstrap
@@ -256,7 +256,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
