@@ -1,15 +1,13 @@
-import { Construct } from "constructs";
+import {Construct} from "constructs";
 import * as cdk from "aws-cdk-lib"
 import {
-  aws_route53 as route53,
-  aws_route53_targets as route53_targets,
   aws_cloudfront as cf,
   aws_cloudfront_origins as cf_origins,
-} from "aws-cdk-lib";
-import {
-  WebsiteBackendStack,
-  WebsiteBackendStackProps
-} from "../storage/website-backend";
+  aws_route53 as route53,
+  aws_route53_targets as route53_targets
+} from "aws-cdk-lib"
+import {WebsiteBackendStack, WebsiteBackendStackProps} from "../storage/website-backend";
+import {BehaviorOptions, ViewerProtocolPolicy} from "aws-cdk-lib/aws-cloudfront";
 
 export interface CloudFrontDistributionStackProps extends WebsiteBackendStackProps {
   appName: string;
@@ -20,6 +18,25 @@ export class CloudFrontDistributionStack extends WebsiteBackendStack {
 
   constructor(scope: Construct, id: string, props: CloudFrontDistributionStackProps) {
     super(scope, id, props);
+
+    const defaultBehaviorBucket = (this.publicBucket) ? this.publicBucket : this.privateBucket!;
+    const additionalBehaviorBucket = (this.publicBucket && this.privateBucket) ? this.privateBucket : undefined;
+
+    const defaultBehavior: BehaviorOptions = {
+      origin: new cf_origins.S3Origin(defaultBehaviorBucket),
+      compress: true,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD_OPTIONS
+    }
+
+    const additionalBehaviors: { [key: string]: BehaviorOptions } | undefined = (additionalBehaviorBucket) ? {
+      "private/*": {
+        origin: new cf_origins.S3Origin(additionalBehaviorBucket),
+        compress: true,
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      }
+    } : undefined;
 
     // Create the CloudFront distribution.
     const rootObject = "index.html";
@@ -35,12 +52,7 @@ export class CloudFrontDistributionStack extends WebsiteBackendStack {
       httpVersion: cf.HttpVersion.HTTP2_AND_3,
       minimumProtocolVersion: cf.SecurityPolicyProtocol.TLS_V1_2_2021,
       priceClass: cf.PriceClass.PRICE_CLASS_100,
-      defaultBehavior: {
-        origin: new cf_origins.S3Origin(this.publicBucket),
-        compress: true,
-        viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD_OPTIONS
-      },
+      defaultBehavior: defaultBehavior,
       errorResponses: [
         {
           // 403 Forbidden
@@ -58,6 +70,14 @@ export class CloudFrontDistributionStack extends WebsiteBackendStack {
         }
       ]
     });
+
+
+    // defaultBehavior: {
+    //   origin: new cf_origins.S3Origin(this.publicBucket),
+    //       compress: true,
+    //       viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    //       allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD_OPTIONS
+    // },
 
     // Add the A Record for this distribution to Route53
     const aRecord = new route53.ARecord(this, "CloudFrontDistributionARecord", {
